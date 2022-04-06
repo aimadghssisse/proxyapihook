@@ -63,9 +63,9 @@ module.exports = class ProxyBridge {
         });
 
         // handle errors
-        request.on('error', function(event) {
-            console.log('problem with request: ' + event.message);
-        });
+        // request.on('error', function(event) {
+        //     console.log('problem with request: ' + event.message);
+        // });
 
         // write data to request body
         if (this.method != 'GET') {
