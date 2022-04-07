@@ -4,27 +4,41 @@ const https = require("https");
 
 module.exports = class ProxyBridge {
     port = '443';
-    host = 'api.bigcommerce.com';
+    host = '';
     path = '/stores';
     token = process.env.BIGCOMMERCE_STORE_HASH;
     xToken = process.env.BIGCOMMERCE_TOKEN;
     version = 2; // default is 2 but there is api use version 3
     method = 'GET';
     payload = {};
+    hooks = false;
 
-    constructor({ method, version = 2, path, payload }) {
+    constructor({ method, version = 2, path, payload = '', host = 'api.bigcommerce.com', hooks = false }) {
+        this.host = host;
         this.method = method;
         this.version = version;
-        this.path += '/' + this.token + '/v' + this.version + '/' + path;
+
+        if(version != false) {
+            this.path += '/' + this.token + '/v' + this.version + '/' + path;
+        } else {
+            this.path = path;
+        }
+        this.hooks = hooks;
         this.payload = JSON.stringify(payload);
     }
 
     getHeaders = () => {
-        return {
+        let header = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'X-Auth-Token': this.xToken
         }
+        if(this.version) {
+            header = {
+                ...header,
+                'X-Auth-Token': this.xToken
+            }
+        }
+        return header;
     }
 
     getOptions = () => {
@@ -48,29 +62,37 @@ module.exports = class ProxyBridge {
 
             // The whole response has been received. Print out the result.
             resp.on('end', () => {
-                // check reponse status
-                let checkData = JSON.parse(data)
-                if (checkData.data !== undefined) {
-                    response.send(JSON.stringify({
-                        status: 200,
-                        ...checkData
-                    }))
-                } else {
-                    response.send(data);
+                if(!this.hooks) {
+                    // check reponse status
+                    if(data != '') {
+                        let checkData = JSON.parse(data)
+                        if (checkData && checkData.data !== undefined) {
+                            response.send(JSON.stringify({
+                                status: 200,
+                                ...checkData
+                            }))
+                        } else {
+                            response.send(data);
+                        }
+                    } else {
+                        response.send(JSON.stringify({
+                            status: 200
+                        }))
+                    }
                 }
             });
 
         });
 
-        // handle errors
-        // request.on('error', function(event) {
-        //     console.log('problem with request: ' + event.message);
-        // });
-
         // write data to request body
-        if (this.method != 'GET') {
+        if (this.payload.length > 0) {
             request.write(this.payload);
         }
+
+        // handle errors
+        request.on('error', function(event) {
+            console.log('problem with request: ' + event.message);
+        });
 
         request.end();
     }

@@ -2,6 +2,7 @@
 
 module.exports = function (app) {
     const bigCommerce = require('../controllers/bigCommerceController');
+    const hookController = require('../controllers/hookController');
 
     // BigCommerce Routes
     app.route('/big-commerce')
@@ -9,4 +10,7 @@ module.exports = function (app) {
         .post(bigCommerce.proxyPost)
         .put(bigCommerce.proxyPut)
         .delete(bigCommerce.proxyDelete);
+
+        app.route('/hooks')
+            .post(hookController.proxyPost);
 }
