@@ -7,14 +7,17 @@ exports.proxyPost = function (request, response) {
         status: 200
     }))
     if(process.env.HOST_HOOKS_REBUILD && process.env.HOST_HOOKS_REBUILD_PATH) {
-        const bridge = new ProxyBridge({
-            host: process.env.HOST_HOOKS_REBUILD,
-            version: false,
-            path:  process.env.HOST_HOOKS_REBUILD_PATH,
-            method: "POST",
-            hooks: true
-        });
+        let listPath = JSON.parse(process.env.HOST_HOOKS_REBUILD_PATH);
+        listPath.map(path => {
+            const bridge = new ProxyBridge({
+                host: process.env.HOST_HOOKS_REBUILD,
+                version: false,
+                path:  path,
+                method: "POST",
+                hooks: true
+            });
 
-        bridge.makeRequest(response);
+            bridge.makeRequest(response);
+        })
     }
 }
